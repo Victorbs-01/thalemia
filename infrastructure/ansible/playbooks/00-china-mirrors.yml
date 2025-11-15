@@ -1,0 +1,253 @@
+---
+# infrastructure/ansible/playbooks/00-china-mirrors.yml
+# Configurar mirrors de Tuna para Debian en China
+# Ejecutar: ansible-playbook -i inventory/hosts.yml playbooks/00-china-mirrors.yml
+
+- name: Configure China Mirrors for Debian Systems
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    tuna_mirror_url: "https://mirrors.tuna.tsinghua.edu.cn"
+    debian_version: "{{ ansible_distribution_release }}"
+
+  tasks:
+    - name: Display target host information
+      debug:
+        msg: "Configuring {{ inventory_hostname }} ({{ ansible_distribution }} {{ ansible_distribution_version }})"
+
+    # ============================================
+    # APT Sources Configuration
+    # ============================================
+
+    - name: Backup original sources.list
+      copy:
+        src: /etc/apt/sources.list
+        dest: /etc/apt/sources.list.backup
+        remote_src: yes
+        force: no
+      ignore_errors: yes
+
+    - name: Configure Tuna APT mirror for Debian
+      template:
+        src: ../templates/sources.list.j2
+        dest: /etc/apt/sources.list
+        owner: root
+        group: root
+        mode: '0644'
+        backup: yes
+      when: ansible_distribution == "Debian"
+
+    - name: Update APT cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      register: apt_update
+      retries: 3
+      delay: 10
+      until: apt_update is succeeded
+
+    # ============================================
+    # Docker Registry Mirror
+    # ============================================
+
+    - name: Create Docker daemon.json directory
+      file:
+        path: /etc/docker
+        state: directory
+        mode: '0755'
+
+    - name: Configure Docker registry mirrors for China
+      copy:
+        content: |
+          {
+            "registry-mirrors": [
+              "https://registry.cn-hangzhou.aliyuncs.com",
+              "https://dockerhub.azk8s.cn",
+              "https://docker.mirrors.ustc.edu.cn"
+            ],
+            "bip": "172.17.0.1/16",
+            "default-address-pools": [
+              {
+                "base": "172.18.0.0/16",
+                "size": 24
+              }
+            ],
+            "mtu": 1350,
+            "dns": ["100.100.100.100", "223.5.5.5", "1.1.1.1"],
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "10m",
+              "max-file": "3"
+            },
+            "live-restore": true,
+            "userland-proxy": false
+          }
+        dest: /etc/docker/daemon.json
+        owner: root
+        group: root
+        mode: '0644'
+      notify: restart docker
+      when: "'docker' in ansible_facts.packages"
+
+    # ============================================
+    # NPM Registry Mirror
+    # ============================================
+
+    - name: Configure NPM registry mirror
+      copy:
+        content: |
+          registry=https://registry.npmmirror.com
+          disturl=https://npmmirror.com/dist
+          sass_binary_site=https://npmmirror.com/mirrors/node-sass
+          phantomjs_cdnurl=https://npmmirror.com/mirrors/phantomjs
+          electron_mirror=https://npmmirror.com/mirrors/electron
+          chromedriver_cdnurl=https://npmmirror.com/mirrors/chromedriver
+          operadriver_cdnurl=https://npmmirror.com/mirrors/operadriver
+          fse_binary_host_mirror=https://npmmirror.com/mirrors/fsevents
+        dest: /root/.npmrc
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Configure NPM registry mirror for users
+      copy:
+        content: |
+          registry=https://registry.npmmirror.com
+          disturl=https://npmmirror.com/dist
+        dest: "/home/{{ item }}/.npmrc"
+        owner: "{{ item }}"
+        group: "{{ item }}"
+        mode: '0644'
+      loop: "{{ ansible_facts.users | map(attribute='name') | select('match', '^(?!root$).*') | list }}"
+      when: ansible_facts.users is defined
+      ignore_errors: yes
+
+    # ============================================
+    # Python PIP Mirror
+    # ============================================
+
+    - name: Create pip config directory
+      file:
+        path: /root/.pip
+        state: directory
+        mode: '0755'
+
+    - name: Configure pip mirror for root
+      copy:
+        content: |
+          [global]
+          index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+          trusted-host = pypi.tuna.tsinghua.edu.cn
+          timeout = 120
+        dest: /root/.pip/pip.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Configure pip mirror for users
+      block:
+        - name: Create pip config directory for users
+          file:
+            path: "/home/{{ item }}/.pip"
+            state: directory
+            owner: "{{ item }}"
+            group: "{{ item }}"
+            mode: '0755'
+          loop: "{{ ansible_facts.users | map(attribute='name') | select('match', '^(?!root$).*') | list }}"
+          when: ansible_facts.users is defined
+          ignore_errors: yes
+
+        - name: Configure pip mirror for users
+          copy:
+            content: |
+              [global]
+              index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+              trusted-host = pypi.tuna.tsinghua.edu.cn
+              timeout = 120
+            dest: "/home/{{ item }}/.pip/pip.conf"
+            owner: "{{ item }}"
+            group: "{{ item }}"
+            mode: '0644'
+          loop: "{{ ansible_facts.users | map(attribute='name') | select('match', '^(?!root$).*') | list }}"
+          when: ansible_facts.users is defined
+          ignore_errors: yes
+
+    # ============================================
+    # Git Configuration
+    # ============================================
+
+    - name: Configure Git to use HTTPS instead of git:// protocol
+      git_config:
+        name: url."https://".insteadOf
+        value: git://
+        scope: global
+      become_user: root
+
+    - name: Configure Git to use GitHub mirror (optional)
+      git_config:
+        name: url."https://hub.fastgit.xyz/".insteadOf
+        value: https://github.com/
+        scope: global
+      become_user: root
+      when: use_github_mirror | default(false)
+
+    # ============================================
+    # Helm Repository Mirror (if Kubernetes)
+    # ============================================
+
+    - name: Add Helm stable repo with Tuna mirror
+      command: helm repo add stable https://mirrors.tuna.tsinghua.edu.cn/helm-stable/
+      become_user: root
+      when: "'helm' in ansible_facts.packages"
+      ignore_errors: yes
+
+    # ============================================
+    # Environment Variables
+    # ============================================
+
+    - name: Set environment variables for China
+      lineinfile:
+        path: /etc/environment
+        line: "{{ item }}"
+        create: yes
+      loop:
+        - 'GOPROXY="https://goproxy.cn,direct"'
+        - 'GOSUMDB="sum.golang.google.cn"'
+        - 'RUSTUP_DIST_SERVER="https://mirrors.tuna.tsinghua.edu.cn/rustup"'
+        - 'RUSTUP_UPDATE_ROOT="https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup"'
+
+    # ============================================
+    # Verification
+    # ============================================
+
+    - name: Test APT mirror connectivity
+      command: apt-get update
+      register: apt_test
+      changed_when: false
+      failed_when: apt_test.rc != 0
+
+    - name: Test Docker registry mirror
+      command: docker pull hello-world
+      register: docker_test
+      changed_when: false
+      when: "'docker' in ansible_facts.packages"
+      ignore_errors: yes
+
+    - name: Display mirror configuration status
+      debug:
+        msg:
+          - "APT Mirror: {{ tuna_mirror_url }}/debian/"
+          - "Docker Mirrors: Configured"
+          - "NPM Mirror: https://registry.npmmirror.com"
+          - "PIP Mirror: https://pypi.tuna.tsinghua.edu.cn/simple"
+          - "Configuration completed successfully!"
+
+  handlers:
+    - name: restart docker
+      systemd:
+        name: docker
+        state: restarted
+      when: "'docker' in ansible_facts.packages"
+      ignore_errors: yes

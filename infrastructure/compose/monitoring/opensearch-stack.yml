@@ -1,0 +1,312 @@
+# infrastructure/compose/monitoring/opensearch-stack.yml
+# Complete HELK-inspired OpenSearch stack
+# Deploy on DV05 and DV06
+
+version: '3.8'
+
+networks:
+  opensearch-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  opensearch-master-data:
+  opensearch-data-1:
+  opensearch-data-2:
+  opensearch-dashboards-data:
+  vector-data:
+  redpanda-data:
+
+services:
+  # ============================================
+  # OpenSearch Master Node
+  # ============================================
+  opensearch-master:
+    image: opensearchproject/opensearch:2.11.1
+    container_name: opensearch-master
+    hostname: opensearch-master
+    environment:
+      - cluster.name=entrepreneur-os-logs
+      - node.name=opensearch-master
+      - node.roles=master,ingest
+      - discovery.seed_hosts=opensearch-master,opensearch-data-1,opensearch-data-2
+      - cluster.initial_master_nodes=opensearch-master
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g"
+      - DISABLE_SECURITY_PLUGIN=false
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PASSWORD:-Admin@123}
+      - plugins.security.ssl.http.enabled=true
+      - plugins.security.ssl.transport.enabled=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-master-data:/usr/share/opensearch/data
+      - ./opensearch/config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
+      - ./opensearch/certs:/usr/share/opensearch/config/certs:ro
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    networks:
+      opensearch-net:
+        ipv4_address: 172.20.0.2
+    healthcheck:
+      test: ["CMD-SHELL", "curl -k -u admin:${OPENSEARCH_PASSWORD:-Admin@123} https://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+
+  # ============================================
+  # OpenSearch Data Node 1 (Hot tier - DV05)
+  # ============================================
+  opensearch-data-1:
+    image: opensearchproject/opensearch:2.11.1
+    container_name: opensearch-data-1
+    hostname: opensearch-data-1
+    environment:
+      - cluster.name=entrepreneur-os-logs
+      - node.name=opensearch-data-1
+      - node.roles=data,ingest
+      - node.attr.temp=hot
+      - discovery.seed_hosts=opensearch-master,opensearch-data-1,opensearch-data-2
+      - cluster.initial_master_nodes=opensearch-master
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms4g -Xmx4g"
+      - DISABLE_SECURITY_PLUGIN=false
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PASSWORD:-Admin@123}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data-1:/usr/share/opensearch/data
+      - ./opensearch/config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
+      - ./opensearch/certs:/usr/share/opensearch/config/certs:ro
+    networks:
+      opensearch-net:
+        ipv4_address: 172.20.0.3
+    depends_on:
+      opensearch-master:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -k -u admin:${OPENSEARCH_PASSWORD:-Admin@123} https://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+
+  # ============================================
+  # OpenSearch Data Node 2 (Warm tier - DV06)
+  # ============================================
+  opensearch-data-2:
+    image: opensearchproject/opensearch:2.11.1
+    container_name: opensearch-data-2
+    hostname: opensearch-data-2
+    environment:
+      - cluster.name=entrepreneur-os-logs
+      - node.name=opensearch-data-2
+      - node.roles=data
+      - node.attr.temp=warm
+      - discovery.seed_hosts=opensearch-master,opensearch-data-1,opensearch-data-2
+      - cluster.initial_master_nodes=opensearch-master
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms4g -Xmx4g"
+      - DISABLE_SECURITY_PLUGIN=false
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PASSWORD:-Admin@123}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data-2:/usr/share/opensearch/data
+      - ./opensearch/config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
+      - ./opensearch/certs:/usr/share/opensearch/config/certs:ro
+    networks:
+      opensearch-net:
+        ipv4_address: 172.20.0.4
+    depends_on:
+      opensearch-master:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -k -u admin:${OPENSEARCH_PASSWORD:-Admin@123} https://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+
+  # ============================================
+  # OpenSearch Dashboards
+  # ============================================
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.11.1
+    container_name: opensearch-dashboards
+    hostname: opensearch-dashboards
+    environment:
+      - OPENSEARCH_HOSTS=["https://opensearch-master:9200"]
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD:-Admin@123}
+      - SERVER_HOST=0.0.0.0
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=false
+    volumes:
+      - opensearch-dashboards-data:/usr/share/opensearch-dashboards/data
+      - ./opensearch/dashboards/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml:ro
+    ports:
+      - "5601:5601"
+    networks:
+      opensearch-net:
+        ipv4_address: 172.20.0.5
+    depends_on:
+      opensearch-master:
+        condition: service_healthy
+      opensearch-data-1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ============================================
+  # Redpanda (Kafka alternative for streaming)
+  # ============================================
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.3.3
+    container_name: redpanda
+    hostname: redpanda
+    command:
+      - redpanda
+      - start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr internal://redpanda:8082,external://localhost:18082
+      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr redpanda:33145
+      - --advertise-rpc-addr redpanda:33145
+      - --smp 1
+      - --memory 1G
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --node-id 0
+      - --check=false
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    ports:
+      - "19092:19092"  # Kafka API
+      - "18081:18081"  # Schema Registry
+      - "18082:18082"  # Pandaproxy
+      - "9644:9644"    # Admin API
+    networks:
+      opensearch-net:
+        ipv4_address: 172.20.0.6
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ============================================
+  # Vector (Log Router - Logstash replacement)
+  # ============================================
+  vector:
+    image: timberio/vector:0.35.0-alpine
+    container_name: vector
+    hostname: vector
+    volumes:
+      - ./vector/vector.toml:/etc/vector/vector.toml:ro
+      - vector-data:/var/lib/vector
+      - /var/log:/host/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "8686:8686"  # API
+      - "9598:9598"  # Prometheus metrics
+    networks:
+      opensearch-net:
+        ipv4_address: 172.20.0.7
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      opensearch-master:
+        condition: service_healthy
+    environment:
+      - VECTOR_LOG=info
+      - VECTOR_REQUIRE_HEALTHY=true
+    command: ["--config", "/etc/vector/vector.toml"]
+
+  # ============================================
+  # Index Management Tool
+  # ============================================
+  opensearch-ism-setup:
+    image: curlimages/curl:latest
+    container_name: opensearch-ism-setup
+    networks:
+      opensearch-net:
+    depends_on:
+      opensearch-master:
+        condition: service_healthy
+    volumes:
+      - ./opensearch/policies:/policies:ro
+      - ./scripts/setup-ism.sh:/setup-ism.sh:ro
+    command: ["/bin/sh", "/setup-ism.sh"]
+    environment:
+      - OPENSEARCH_HOST=opensearch-master
+      - OPENSEARCH_PORT=9200
+      - OPENSEARCH_USER=admin
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD:-Admin@123}
+    restart: "no"
+
+  # ============================================
+  # Healthcheck and monitoring
+  # ============================================
+  opensearch-exporter:
+    image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
+    container_name: opensearch-exporter
+    hostname: opensearch-exporter
+    command:
+      - '--es.uri=https://admin:${OPENSEARCH_PASSWORD:-Admin@123}@opensearch-master:9200'
+      - '--es.all'
+      - '--es.indices'
+      - '--es.cluster_settings'
+      - '--es.shards'
+      - '--es.ssl-skip-verify'
+    ports:
+      - "9114:9114"
+    networks:
+      opensearch-net:
+        ipv4_address: 172.20.0.8
+    depends_on:
+      opensearch-master:
+        condition: service_healthy

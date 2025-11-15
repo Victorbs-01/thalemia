@@ -1,0 +1,353 @@
+---
+# infrastructure/ansible/playbooks/01-docker-tailscale.yml
+# Instalar Docker PRIMERO, luego Tailscale (orden correcto)
+# Ejecutar: ansible-playbook -i inventory/hosts.yml playbooks/01-docker-tailscale.yml
+
+- name: Install Docker and Tailscale in Correct Order
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    docker_compose_version: "2.24.0"
+    tailscale_auth_key: "{{ lookup('env', 'TAILSCALE_AUTH_KEY') }}"
+
+  tasks:
+    - name: Display installation order
+      debug:
+        msg:
+          - "Installation order:"
+          - "1. Docker"
+          - "2. Docker Compose"
+          - "3. Configure Docker daemon"
+          - "4. Restart Docker"
+          - "5. Tailscale"
+          - "6. Configure networking"
+          - "This order prevents routing conflicts!"
+
+    # ============================================
+    # PHASE 1: INSTALL DOCKER
+    # ============================================
+
+    - name: Install prerequisites
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - software-properties-common
+        state: present
+        update_cache: yes
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch={{ ansible_architecture }}] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+        state: present
+        update_cache: yes
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    # ============================================
+    # PHASE 2: CONFIGURE DOCKER DAEMON
+    # ============================================
+
+    - name: Ensure Docker config directory exists
+      file:
+        path: /etc/docker
+        state: directory
+        mode: '0755'
+
+    - name: Configure Docker daemon with Tailscale-friendly settings
+      copy:
+        content: |
+          {
+            "registry-mirrors": [
+              "https://registry.cn-hangzhou.aliyuncs.com",
+              "https://dockerhub.azk8s.cn"
+            ],
+            "bip": "172.17.0.1/16",
+            "default-address-pools": [
+              {
+                "base": "172.18.0.0/16",
+                "size": 24
+              }
+            ],
+            "mtu": 1350,
+            "dns": ["100.100.100.100", "223.5.5.5", "1.1.1.1"],
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "10m",
+              "max-file": "3"
+            },
+            "live-restore": true,
+            "userland-proxy": false,
+            "iptables": true,
+            "ip-forward": true,
+            "storage-driver": "overlay2"
+          }
+        dest: /etc/docker/daemon.json
+        owner: root
+        group: root
+        mode: '0644'
+      notify: restart docker
+
+    - name: Add users to docker group
+      user:
+        name: "{{ item }}"
+        groups: docker
+        append: yes
+      loop: "{{ docker_users | default(['root']) }}"
+
+    # ============================================
+    # PHASE 3: RESTART DOCKER
+    # ============================================
+
+    - name: Flush handlers (restart Docker now)
+      meta: flush_handlers
+
+    - name: Wait for Docker to be ready
+      command: docker info
+      register: docker_info
+      retries: 5
+      delay: 3
+      until: docker_info.rc == 0
+      changed_when: false
+
+    - name: Verify Docker is working
+      command: docker run --rm hello-world
+      register: docker_test
+      changed_when: false
+
+    - name: Display Docker version
+      command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Show Docker version
+      debug:
+        msg: "{{ docker_version.stdout }}"
+
+    # ============================================
+    # PHASE 4: INSTALL DOCKER COMPOSE
+    # ============================================
+
+    - name: Install Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-{{ ansible_architecture }}"
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Verify Docker Compose installation
+      command: docker-compose --version
+      register: compose_version
+      changed_when: false
+
+    - name: Show Docker Compose version
+      debug:
+        msg: "{{ compose_version.stdout }}"
+
+    # ============================================
+    # PHASE 5: INSTALL TAILSCALE
+    # ============================================
+
+    - name: Add Tailscale GPG key
+      apt_key:
+        url: https://pkgs.tailscale.com/stable/debian/{{ ansible_distribution_release }}.noarmor.gpg
+        keyring: /usr/share/keyrings/tailscale-archive-keyring.gpg
+        state: present
+
+    - name: Add Tailscale repository
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/debian {{ ansible_distribution_release }} main"
+        state: present
+        filename: tailscale
+
+    - name: Install Tailscale
+      apt:
+        name: tailscale
+        state: present
+        update_cache: yes
+
+    # ============================================
+    # PHASE 6: CONFIGURE NETWORKING
+    # ============================================
+
+    - name: Enable IP forwarding
+      sysctl:
+        name: "{{ item }}"
+        value: '1'
+        state: present
+        reload: yes
+        sysctl_file: /etc/sysctl.d/99-tailscale.conf
+      loop:
+        - net.ipv4.ip_forward
+        - net.ipv6.conf.all.forwarding
+
+    - name: Configure Tailscale to accept routes and advertise Docker subnet
+      command: >
+        tailscale up
+        --accept-routes
+        --advertise-routes=172.17.0.0/16,172.18.0.0/16
+        {% if tailscale_auth_key %}--authkey={{ tailscale_auth_key }}{% endif %}
+        --hostname={{ inventory_hostname }}
+      register: tailscale_up
+      changed_when: "'Success' in tailscale_up.stdout"
+      when: tailscale_auth_key != ""
+
+    - name: Get Tailscale status
+      command: tailscale status
+      register: tailscale_status
+      changed_when: false
+
+    - name: Display Tailscale status
+      debug:
+        msg: "{{ tailscale_status.stdout_lines }}"
+
+    - name: Get Tailscale IP
+      command: tailscale ip -4
+      register: tailscale_ip
+      changed_when: false
+
+    - name: Display Tailscale IP
+      debug:
+        msg: "Tailscale IP: {{ tailscale_ip.stdout }}"
+
+    # ============================================
+    # PHASE 7: VERIFY INTEGRATION
+    # ============================================
+
+    - name: Create test Docker network
+      command: docker network create test-network
+      register: network_create
+      ignore_errors: yes
+      changed_when: network_create.rc == 0
+
+    - name: Verify Docker networking
+      command: docker network ls
+      register: docker_networks
+      changed_when: false
+
+    - name: Show Docker networks
+      debug:
+        msg: "{{ docker_networks.stdout_lines }}"
+
+    - name: Test connectivity to Tailscale network
+      command: ping -c 3 100.100.100.100
+      register: tailscale_ping
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Display connectivity test result
+      debug:
+        msg: "Tailscale connectivity: {{ 'OK' if tailscale_ping.rc == 0 else 'Failed' }}"
+
+    # ============================================
+    # PHASE 8: IPTABLES RECONCILIATION
+    # ============================================
+
+    - name: Create iptables reconciliation script
+      copy:
+        content: |
+          #!/bin/bash
+          # Reconcile iptables rules for Docker + Tailscale
+          
+          # Ensure Docker chains exist
+          iptables -N DOCKER 2>/dev/null || true
+          iptables -N DOCKER-USER 2>/dev/null || true
+          
+          # Allow Tailscale traffic
+          iptables -A DOCKER-USER -i tailscale0 -j ACCEPT
+          iptables -A DOCKER-USER -o tailscale0 -j ACCEPT
+          
+          # Allow established connections
+          iptables -A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+          
+          # Log and accept (for debugging)
+          iptables -A DOCKER-USER -j LOG --log-prefix "DOCKER-USER: " --log-level 4
+          iptables -A DOCKER-USER -j RETURN
+          
+          echo "iptables rules reconciled"
+        dest: /usr/local/bin/reconcile-iptables.sh
+        mode: '0755'
+
+    - name: Run iptables reconciliation
+      command: /usr/local/bin/reconcile-iptables.sh
+      changed_when: true
+
+    - name: Create systemd service for iptables reconciliation
+      copy:
+        content: |
+          [Unit]
+          Description=Reconcile iptables for Docker and Tailscale
+          After=docker.service tailscaled.service
+          Requires=docker.service tailscaled.service
+          
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/local/bin/reconcile-iptables.sh
+          RemainAfterExit=yes
+          
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/reconcile-iptables.service
+
+    - name: Enable iptables reconciliation service
+      systemd:
+        name: reconcile-iptables
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
+    # ============================================
+    # FINAL VERIFICATION
+    # ============================================
+
+    - name: Final system check
+      debug:
+        msg:
+          - "✅ Docker installed and configured"
+          - "✅ Tailscale installed and connected"
+          - "✅ iptables rules reconciled"
+          - "✅ IP forwarding enabled"
+          - "Docker version: {{ docker_version.stdout }}"
+          - "Compose version: {{ compose_version.stdout }}"
+          - "Tailscale IP: {{ tailscale_ip.stdout }}"
+          - ""
+          - "⚠️  IMPORTANT: Test container connectivity via Tailscale"
+          - "Run: docker run -d --name test nginx"
+          - "Then: curl http://{{ tailscale_ip.stdout }}"
+
+  handlers:
+    - name: restart docker
+      systemd:
+        name: docker
+        state: restarted
+        daemon_reload: yes
+      notify: wait for docker
+
+    - name: wait for docker
+      wait_for:
+        port: 2375
+        timeout: 30
+      ignore_errors: yes
