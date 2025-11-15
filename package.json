@@ -1,0 +1,81 @@
+{
+  "name": "entrepreneur-os",
+  "version": "0.1.0",
+  "scripts": {
+    "nx": "nx",
+    "list": "nx list",
+    
+    "// === DESARROLLO ===": "",
+    "dev": "nx run-many -t serve --all --parallel=5",
+    "dev:vendure": "nx run-many -t serve --projects=vendure-master,vendure-ecommerce --parallel=2",
+    "dev:shops": "nx run-many -t serve --projects=storefront-nextjs,storefront-vite --parallel=2",
+    "dev:master": "nx serve vendure-master",
+    "dev:ecommerce": "nx serve vendure-ecommerce",
+    "dev:next": "nx serve storefront-nextjs",
+    "dev:vite": "nx serve storefront-vite",
+    
+    "// === BUILD ===": "",
+    "build": "nx run-many -t build --all",
+    "build:affected": "nx affected -t build",
+    "build:vendure": "nx run-many -t build --projects=vendure-master,vendure-ecommerce",
+    
+    "// === TESTING ===": "",
+    "test": "nx run-many -t test --all",
+    "test:affected": "nx affected -t test",
+    "test:watch": "nx run-many -t test --all --watch",
+    "e2e": "nx run-many -t e2e --all",
+    "e2e:ui": "playwright test --ui",
+    
+    "// === LINTING ===": "",
+    "lint": "nx run-many -t lint --all",
+    "lint:fix": "nx run-many -t lint --all --fix",
+    "format": "nx format:write",
+    "format:check": "nx format:check",
+    
+    "// === DOCKER ===": "",
+    "docker:start": "bash tools/scripts/docker-start.sh",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:stop": "docker-compose stop",
+    "docker:restart": "docker-compose restart",
+    "docker:logs": "docker-compose logs -f",
+    "docker:ps": "docker-compose ps",
+    "docker:clean": "docker-compose down -v --remove-orphans",
+    "docker:rebuild": "docker-compose up -d --build --force-recreate",
+    "docker:db:reset": "docker-compose down postgres-master postgres-ecommerce && docker volume rm entrepreneur-os_postgres-master-data entrepreneur-os_postgres-ecommerce-data && docker-compose up -d postgres-master postgres-ecommerce",
+    
+    "// === DATABASE ===": "",
+    "db:reset": "bash tools/scripts/reset-databases.sh",
+    "db:seed": "bash tools/scripts/seed-databases.sh",
+    "db:migrate": "bash tools/scripts/migrate-databases.sh",
+    
+    "// === NX UTILIDADES ===": "",
+    "graph": "nx graph",
+    "affected:graph": "nx affected:graph",
+    "reset": "nx reset",
+    "clean": "nx reset && pnpm run docker:clean",
+    
+    "// === SETUP ===": "",
+    "setup": "pnpm run setup:vendure && pnpm run setup:env",
+    "setup:vendure": "bash tools/scripts/setup-vendure.sh",
+    "setup:env": "bash tools/scripts/setup-env.sh",
+    
+    "// === GENERADORES ===": "",
+    "generate": "nx generate",
+    "g:lib": "nx generate @nx/js:library",
+    "g:app": "nx generate @nx/node:application",
+    "g:component": "nx generate @nx/react:component"
+  },
+  "devDependencies": {
+    "@nx/cypress": "^22.0.3",
+    "@nx/eslint-plugin": "^22.0.3",
+    "@nx/jest": "^22.0.3",
+    "@nx/js": "^22.0.3",
+    "@nx/next": "^22.0.3",
+    "@nx/node": "^22.0.3",
+    "@nx/playwright": "^22.0.3",
+    "@nx/react": "^22.0.3",
+    "@nx/vite": "^22.0.3",
+    "@nx/webpack": "^22.0.3"
+  }
+}

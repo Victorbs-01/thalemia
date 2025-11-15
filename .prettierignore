@@ -1,0 +1,17 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+dist
+build
+.next
+out-tsc
+
+# Nx
+.nx
+
+# Misc
+coverage
+*.log
+.env*
