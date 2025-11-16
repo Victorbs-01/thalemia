@@ -1,6 +1,7 @@
 {
   "name": "entrepreneur-os",
   "version": "0.1.0",
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
     "prepare": "husky",
     "nx": "nx",
