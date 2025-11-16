@@ -478,6 +478,8 @@ nx run-many -t build --all --skip-nx-cache
 
 ## Environment Setup
 
+### Quick Start (Standard Machines with 8GB+ RAM)
+
 1. **Initial setup:**
 
    ```bash
@@ -493,17 +495,40 @@ nx run-many -t build --all --skip-nx-cache
    pnpm run db:reset
    ```
 
-3. **Start development:**
+3. **Setup Vendure instances:**
+
+   ```bash
+   # Setup both instances (requires ~4-8GB RAM)
+   pnpm run setup:vendure:master
+   pnpm run setup:vendure:ecommerce
+   ```
+
+4. **Start development:**
 
    ```bash
    pnpm run dev
    ```
 
-4. **Access services:**
+5. **Access services:**
    - Vendure Master Admin: http://localhost:3001
    - Vendure Ecommerce Admin: http://localhost:3003
    - n8n: http://localhost:5678
    - Adminer (DB UI): http://localhost:8080
+
+### Low-RAM Setup (Machines with <8GB RAM)
+
+For machines with limited RAM, follow the **sequential installation guide**:
+
+📖 **See:** [docs/guides/VENDURE-SETUP.md](docs/guides/VENDURE-SETUP.md)
+
+**Key steps:**
+
+1. Start only PostgreSQL: `docker-compose up -d postgres-master postgres-ecommerce`
+2. Install Master: `pnpm run setup:vendure:master` (wait to complete)
+3. Install Ecommerce: `pnpm run setup:vendure:ecommerce` (wait to complete)
+4. Start instances one at a time as needed
+
+This approach reduces peak memory usage from ~8GB to ~4GB.
 
 ## Additional Resources
 
