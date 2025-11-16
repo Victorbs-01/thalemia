@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "defaultMode": "plan"
+  },
+  "behavior": {
+    "alwaysApproveReadOnly": false,
+    "autoRunTests": false,
+    "requireExplicitCommit": true
+  },
+  "safety": {
+    "preventSecretCommits": true,
+    "requireEnvValidation": true,
+    "validateBeforePush": true
+  },
+  "nx": {
+    "useAffectedCommands": true,
+    "parallelExecutions": 3,
+    "cacheEnabled": true
+  },
+  "codeReview": {
+    "enforceConventionalCommits": true,
+    "requireTests": true,
+    "requireDocumentation": true
+  },
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/.nx/**",
+    "**/dist/**",
+    "**/*.log",
+    ".env*",
+    "**/.idea/**",
+    "**/.vscode/**"
+  ],
+  "projectContext": {
+    "architecture": "nx-monorepo",
+    "pattern": "dual-vendure-master-ecommerce",
+    "deployment": "distributed-k3s-china-friendly",
+    "primaryLanguages": ["typescript", "javascript"],
+    "frameworks": ["vendure", "next.js", "react", "vite"]
+  }
+}
