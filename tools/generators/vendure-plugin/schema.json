@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "VendurePlugin",
+  "title": "Create a Vendure Plugin",
+  "description": "Generate a new Vendure plugin in libs/vendure/plugins/",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Plugin name (e.g., 'multi-tenant')",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": "What is the name of the plugin?"
+    },
+    "target": {
+      "type": "string",
+      "description": "Target Vendure instance(s)",
+      "enum": ["master", "ecommerce", "both"],
+      "default": "both",
+      "x-prompt": {
+        "message": "Which Vendure instance will use this plugin?",
+        "type": "list",
+        "items": [
+          { "value": "master", "label": "Master (PIM) only" },
+          { "value": "ecommerce", "label": "Ecommerce only" },
+          { "value": "both", "label": "Both instances" }
+        ]
+      }
+    }
+  },
+  "required": ["name"]
+}

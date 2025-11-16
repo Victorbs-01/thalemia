@@ -1,0 +1,7 @@
+/**
+ * <%= className %> library for Entrepreneur-OS
+ * @packageDocumentation
+ */
+
+// Export your public API here
+export * from './lib/<%= fileName %>';

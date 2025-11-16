@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "name": "@entrepreneur-os/generators",
+  "version": "1.0.0",
+  "generators": {
+    "shared-library": {
+      "factory": "./shared-library/index",
+      "schema": "./shared-library/schema.json",
+      "description": "Create a new shared library in libs/shared/"
+    },
+    "vendure-plugin": {
+      "factory": "./vendure-plugin/index",
+      "schema": "./vendure-plugin/schema.json",
+      "description": "Create a new Vendure plugin in libs/vendure/plugins/"
+    }
+  }
+}

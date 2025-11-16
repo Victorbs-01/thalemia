@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "SharedLibrary",
+  "title": "Create a Shared Library",
+  "description": "Generate a new shared library in libs/shared/",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Library name (e.g., 'my-feature')",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": "What is the name of the library?"
+    },
+    "directory": {
+      "type": "string",
+      "description": "Directory within libs/shared/ (ui-components, data-access, utils, types)",
+      "enum": ["ui-components", "data-access", "utils", "types"],
+      "default": "utils",
+      "x-prompt": {
+        "message": "Which category does this library belong to?",
+        "type": "list",
+        "items": [
+          { "value": "ui-components", "label": "UI Components (React components)" },
+          { "value": "data-access", "label": "Data Access (API clients, GraphQL)" },
+          { "value": "utils", "label": "Utils (Helper functions)" },
+          { "value": "types", "label": "Types (TypeScript interfaces)" }
+        ]
+      }
+    }
+  },
+  "required": ["name", "directory"]
+}

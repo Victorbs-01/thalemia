@@ -1,0 +1,6 @@
+/**
+ * <%= className %>
+ */
+export function <%= propertyName %>(): string {
+  return '<%= projectName %>';
+}

@@ -1,0 +1,6 @@
+/**
+ * <%= className %>Plugin
+ * @packageDocumentation
+ */
+
+export * from './<%= fileName %>.plugin';

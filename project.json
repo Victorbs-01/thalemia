@@ -1,0 +1,95 @@
+{
+  "name": "entrepreneur-os",
+  "$schema": "node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "targets": {
+    "make:setup": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "corepack enable",
+          "pnpm install",
+          "node -e \"const fs = require('fs'); if (!fs.existsSync('.env')) { fs.copyFileSync('.env.example', '.env'); console.log('✅ Created .env from .env.example'); } else { console.log('✅ .env already exists'); }\""
+        ],
+        "parallel": false,
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Initialize development environment (Corepack, install dependencies, setup .env)"
+      }
+    },
+    "make:dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Start all development servers"
+      }
+    },
+    "make:docker-up": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker-compose up -d",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Start Docker infrastructure services"
+      }
+    },
+    "make:docker-down": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker-compose down",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Stop Docker infrastructure services"
+      }
+    },
+    "make:test-all": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Run all tests across the monorepo"
+      }
+    },
+    "make:lint-all": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Run linters across all projects"
+      }
+    },
+    "make:ci": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "echo '🔍 Running lint...'",
+          "pnpm run lint",
+          "echo '✨ Running format check...'",
+          "pnpm run format:check",
+          "echo '🔧 Running type check...'",
+          "pnpm exec tsc --noEmit",
+          "echo '🧪 Running tests...'",
+          "pnpm run test",
+          "echo '🏗️  Running build...'",
+          "pnpm run build",
+          "echo '✅ CI pipeline complete!'"
+        ],
+        "parallel": false,
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Run full CI pipeline locally (lint → format → typecheck → test → build)"
+      }
+    }
+  }
+}
