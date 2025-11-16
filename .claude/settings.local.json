@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": ["Bash(gh api:*)", "Bash(cat:*)", "Bash(test:*)", "Bash(pnpm list:*)"],
+    "deny": [],
+    "ask": []
+  }
+}

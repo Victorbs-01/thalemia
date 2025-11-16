@@ -38,6 +38,30 @@ yarn-error.log
 testem.log
 /typings
 
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# Secrets and credentials
+secrets/
+credentials/
+*.key
+*.pem
+*.p12
+*.pfx
+*.cert
+*.crt
+credentials.json
+.credentials
+service-account*.json
+gcloud-key*.json
+firebase-adminsdk*.json
+
 # System Files
 .DS_Store
 Thumbs.db

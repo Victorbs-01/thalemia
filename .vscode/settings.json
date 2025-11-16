@@ -1,3 +1,51 @@
 {
-    "git.ignoreLimitWarning": true
+  // Git settings
+  "git.ignoreLimitWarning": true,
+
+  // Editor settings
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.rulers": [100],
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+
+  // Files settings
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.exclude": {
+    "**/.nx": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.git": true
+  },
+
+  // TypeScript settings
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+
+  // ESLint settings
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+
+  // Search settings
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.nx": true,
+    "**/coverage": true,
+    "**/test-results": true
+  },
+
+  // Nx Console settings
+  "nxConsole.showNodeVersionOnStartup": false,
+
+  // File associations
+  "files.associations": {
+    "*.css": "css",
+    ".env*": "dotenv"
+  }
 }
