@@ -1,6 +1,6 @@
 1. instalar claude code, ready
-2. Que es lo primero que deberia revisar claude code ?
-3. Tenemos todas las revisiones de codigo necesarias para esta etapa?
+2. Que es lo primero que deberia revisar claude code ? ready
+3. Tenemos todas las revisiones de codigo necesarias para esta etapa? ready
 4. Que revisiones de codigo deberiamos agregar en el futuro
 5. Que documentacion necesita claude para operar mejor con el repo
 6. Que deberiamos agregar en el setting.json de la carpeta .claude ?
