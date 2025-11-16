@@ -19,4 +19,9 @@
 7. instalo dependedant bot
 8. configuro archivos para vscode y inteligent idea.
 9. se activo la seguridad para la rama de github, se activo dependant bot en github,
-10. se le pidio comitear a claude, ya que quede atrapado entre las nuevas reglas y el commit viejo
+10. (se debe investigar como partir los repos para que esto no ocurra)
+11.
+12. se le pidio comitear a claude, ya que quede atrapado entre las nuevas reglas y el commit viejo
+13. se pidio crear el readmemd
+14. ahora quiero que active las reglas para que se optimicen tokens, con los makefile y plop de NX
+15.
