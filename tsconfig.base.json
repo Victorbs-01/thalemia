@@ -30,7 +30,11 @@
       "@entrepreneur-os/vendure/graphql": ["libs/vendure/graphql/src/index.ts"],
       "@entrepreneur-os/testing/e2e-utils": ["libs/testing/e2e-utils/src/index.ts"],
       "@entrepreneur-os/testing/fixtures": ["libs/testing/fixtures/src/index.ts"],
-      "@entrepreneur-os/testing/mocks": ["libs/testing/mocks/src/index.ts"]
+      "@entrepreneur-os/testing/mocks": ["libs/testing/mocks/src/index.ts"],
+      "@entrepreneur-os/storefront/core": ["libs/storefront/core/src/index.ts"],
+      "@entrepreneur-os/storefront/ui": ["libs/storefront/ui/src/index.ts"],
+      "@entrepreneur-os/storefront/theme-master": ["libs/storefront/theme-master/src/index.ts"],
+      "@entrepreneur-os/storefront/theme-shop-default": ["libs/storefront/theme-shop-default/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp", "dist"]

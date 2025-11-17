@@ -1,0 +1,51 @@
+{
+  "name": "front-master",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/storefront-vite/front-master/src",
+  "projectType": "application",
+  "tags": ["type:app", "scope:storefront"],
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/storefront-vite/front-master",
+        "configFile": "apps/storefront-vite/front-master/vite.config.ts"
+      },
+      "configurations": {
+        "production": {
+          "mode": "production"
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "options": {
+        "buildTarget": "front-master:build",
+        "port": 3011,
+        "hmr": true
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "front-master:build:production"
+        }
+      }
+    },
+    "preview": {
+      "executor": "@nx/vite:preview-server",
+      "options": {
+        "buildTarget": "front-master:build",
+        "port": 3011
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "front-master:build:production"
+        }
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {}
+    }
+  }
+}
