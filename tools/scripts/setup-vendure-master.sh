@@ -1,4 +1,16 @@
 #!/bin/bash
+#
+# Vendure Master Setup Script (Sequential Installation)
+#
+# This script installs ONLY the vendure-master instance.
+# It is designed for sequential installation on low-RAM systems (<8GB).
+#
+# Alternative: Use setup-vendure.sh to install BOTH instances simultaneously
+# (requires ~8GB RAM).
+#
+# Database credentials: Loaded from project root .env file, with fallback defaults.
+# Run from project root: ./tools/scripts/setup-vendure-master.sh
+#
 set -e
 
 # Colores para output
@@ -39,6 +51,13 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Load environment variables from project root .env if it exists
+if [ -f ".env" ]; then
+    set -a
+    source .env 2>/dev/null || true
+    set +a
+fi
 
 echo -e "${BLUE}🚀 Entrepreneur OS - Vendure Master Setup${NC}"
 echo "================================================"
@@ -432,8 +451,13 @@ if [ -z "$MASTER_DB_READY" ]; then
 fi
 print_status "Base de datos Master lista"
 
-# Configurar Vendure Master
-setup_vendure "vendure-master" "5432" "3000" "3001" "vendure_master" "vendure_master_pass"
+# Configurar Vendure Master (usando variables de .env con fallbacks)
+setup_vendure "vendure-master" \
+    "${POSTGRES_MASTER_PORT:-5432}" \
+    "${VENDURE_MASTER_PORT:-3000}" \
+    "${VENDURE_MASTER_ADMIN_PORT:-3001}" \
+    "${POSTGRES_MASTER_DB:-vendure_master}" \
+    "${POSTGRES_MASTER_PASSWORD:-vendure_master_pass}"
 
 # Mensaje final
 echo ""

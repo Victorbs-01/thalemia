@@ -1,4 +1,16 @@
 #!/bin/bash
+#
+# Vendure Ecommerce Setup Script (Sequential Installation)
+#
+# This script installs ONLY the vendure-ecommerce instance.
+# It is designed for sequential installation on low-RAM systems (<8GB).
+#
+# Alternative: Use setup-vendure.sh to install BOTH instances simultaneously
+# (requires ~8GB RAM).
+#
+# Database credentials: Loaded from project root .env file, with fallback defaults.
+# Run from project root: ./tools/scripts/setup-vendure-ecommerce.sh
+#
 set -e
 
 # Colores para output
@@ -11,6 +23,13 @@ NC='\033[0m' # No Color
 # Versión de Vendure a instalar
 VENDURE_VERSION="^3.1.0"  # Usa 3.1.x que es estable
 OSW_VERSION="1.3.5"       # Pin OSW version para evitar bugs
+
+# Load environment variables from project root .env if it exists
+if [ -f ".env" ]; then
+    set -a
+    source .env 2>/dev/null || true
+    set +a
+fi
 
 echo -e "${BLUE}🚀 Entrepreneur OS - Vendure Ecommerce Setup${NC}"
 echo "================================================"
@@ -341,8 +360,13 @@ if [ -z "$ECOMMERCE_DB_READY" ]; then
 fi
 print_status "Base de datos Ecommerce lista"
 
-# Configurar Vendure Ecommerce
-setup_vendure "vendure-ecommerce" "5433" "3002" "3003" "vendure_ecommerce" "vendure_ecommerce_pass"
+# Configurar Vendure Ecommerce (usando variables de .env con fallbacks)
+setup_vendure "vendure-ecommerce" \
+    "${POSTGRES_ECOMMERCE_PORT:-5433}" \
+    "${VENDURE_ECOMMERCE_PORT:-3002}" \
+    "${VENDURE_ECOMMERCE_ADMIN_PORT:-3003}" \
+    "${POSTGRES_ECOMMERCE_DB:-vendure_ecommerce}" \
+    "${POSTGRES_ECOMMERCE_PASSWORD:-vendure_ecommerce_pass}"
 
 # Mensaje final
 echo ""

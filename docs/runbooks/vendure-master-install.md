@@ -98,15 +98,55 @@ This creates the `vendure_master` database if it doesn't exist.
 
 ---
 
+## Installation Method Selection
+
+Choose the installation method based on your system resources:
+
+### Method 1: Unified Installation (Both Instances)
+
+**Recommended for:** Standard development machines with adequate RAM
+
+- **Script:** `setup-vendure.sh` (Linux/macOS) or `setup-vendure.ps1` (Windows)
+- **Installs:** Both vendure-master AND vendure-ecommerce simultaneously
+- **RAM Required:** ~8GB
+- **Duration:** 5-10 minutes
+- **Best for:** Quick setup when you need both instances
+
+### Method 2: Sequential Installation (Master Only)
+
+**Recommended for:** Low-RAM systems, focused development, or step-by-step setup
+
+- **Script:** `setup-vendure-master.sh` (Linux/macOS) or `setup-vendure-master.ps1` (Windows)
+- **Installs:** ONLY vendure-master instance
+- **RAM Required:** ~4GB
+- **Duration:** 3-5 minutes
+- **Best for:** Resource-constrained machines, learning the system
+
+**Note:** If using Method 2, you'll install vendure-ecommerce separately later using `setup-vendure-ecommerce.sh/.ps1`.
+
+---
+
 ## Installation Steps
 
 ### Linux / macOS
 
 #### Step 1: Run Setup Script
 
+Choose your installation method (see "Installation Method Selection" above):
+
+**Option 1: Unified Installation (both instances)**
 ```bash
 # From project root
 ./tools/scripts/setup-vendure.sh
+```
+
+**Option 2: Sequential Installation (master only)**
+```bash
+# From project root
+./tools/scripts/setup-vendure-master.sh
+
+# Or via pnpm:
+pnpm run setup:vendure:master
 ```
 
 **What this does:**
@@ -148,9 +188,21 @@ pnpm list @vendure/core
 
 #### Step 1: Run Setup Script
 
+Choose your installation method (see "Installation Method Selection" above):
+
+**Option 1: Unified Installation (both instances)**
 ```powershell
 # From project root
 .\tools\scripts\setup-vendure.ps1
+```
+
+**Option 2: Sequential Installation (master only)**
+```powershell
+# From project root
+.\tools\scripts\setup-vendure-master.ps1
+
+# Or via pnpm:
+pnpm run setup:vendure:master
 ```
 
 **What this does:**
@@ -603,13 +655,39 @@ docker logs entrepreneur-postgres-master
 
 ---
 
+## Script Map
+
+All Vendure setup and database management scripts are located in `tools/scripts/`. Here's what each one does:
+
+### Installation Scripts
+
+| Script | Purpose | When to Use |
+|--------|---------|-------------|
+| `setup-vendure.sh` / `.ps1` | Installs BOTH vendure-master and vendure-ecommerce instances simultaneously | Standard dev machines with 8GB+ RAM |
+| `setup-vendure-master.sh` / `.ps1` | Installs ONLY vendure-master instance | Low-RAM systems, sequential install, focused development |
+| `setup-vendure-ecommerce.sh` / `.ps1` | Installs ONLY vendure-ecommerce instance | After installing master, low-RAM systems |
+
+### Database Scripts
+
+| Script | Purpose | When to Use |
+|--------|---------|-------------|
+| `init-databases.sh` | Creates vendure_master and vendure_ecommerce databases if they don't exist | First-time setup, fresh install |
+| `reset-databases.sh` | Drops and recreates both databases (DESTRUCTIVE) | Clean slate, testing, troubleshooting |
+| `seed-databases.sh` | Populates databases with sample data | Development, testing |
+| `migrate-databases.sh` | Runs TypeORM migrations for both instances | After schema changes, version updates |
+
+**Note:** All scripts should be run from the project root directory. Database scripts load credentials from project root `.env` file.
+
+---
+
 ## Quick Reference
 
 ### Commands Summary
 
 | Task | Linux/macOS | Windows PowerShell |
 |------|-------------|-------------------|
-| **Install** | `./tools/scripts/setup-vendure.sh` | `.\tools\scripts\setup-vendure.ps1` |
+| **Install (both)** | `./tools/scripts/setup-vendure.sh` | `.\tools\scripts\setup-vendure.ps1` |
+| **Install (master only)** | `./tools/scripts/setup-vendure-master.sh` or `pnpm run setup:vendure:master` | `.\tools\scripts\setup-vendure-master.ps1` or `pnpm run setup:vendure:master` |
 | **Start** | `cd apps/vendure-master && pnpm run dev` | `cd apps\vendure-master; pnpm run dev` |
 | **Stop** | `Ctrl+C` | `Ctrl+C` |
 | **Reset DB** | `./tools/scripts/reset-databases.sh` | N/A (use Docker/psql manually) |
