@@ -21,6 +21,23 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# 👉 PRIMERO: helpers
+print_status() {
+    echo -e "${GREEN}✓${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}✗${NC} $1"
+}
+
+print_info() {
+    echo -e "${BLUE}ℹ${NC} $1"
+}
+
 # Versión de Vendure a instalar
 VENDURE_VERSION="^3.1.0"  # Usa 3.1.x que es estable
 OSW_VERSION="1.3.5"       # Pin OSW version para evitar bugs
@@ -42,23 +59,6 @@ print_info "Loading configuration from .env..."
 set -a
 source .env
 set +a
-
-# Función para imprimir con color
-print_status() {
-    echo -e "${GREEN}✓${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}✗${NC} $1"
-}
-
-print_info() {
-    echo -e "${BLUE}ℹ${NC} $1"
-}
 
 # Verificar que estamos en la raíz del proyecto
 if [ ! -f "package.json" ] || [ ! -d "apps" ]; then
