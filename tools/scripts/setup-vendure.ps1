@@ -25,6 +25,24 @@ if (-not (Test-Path "package.json") -or -not (Test-Path "apps")) {
     exit 1
 }
 
+# Verificar que existe .env en la raíz del proyecto
+if (-not (Test-Path ".env")) {
+    Write-Err ".env file not found. Please create it from .env.example:"
+    Write-Host "  Copy-Item .env.example .env"
+    Write-Host "  # Then edit .env with your configuration"
+    exit 1
+}
+
+# Cargar variables de entorno desde .env
+Write-Info "Loading configuration from .env..."
+Get-Content .env | ForEach-Object {
+    if ($_ -match '^\s*([^#][^=]*)\s*=\s*(.*)$') {
+        $name = $matches[1].Trim()
+        $value = $matches[2].Trim()
+        [Environment]::SetEnvironmentVariable($name, $value, [EnvironmentVariableTarget]::Process)
+    }
+}
+
 # Función para crear package.json con ConvertTo-Json
 function New-VendurePackageJson {
     param(
@@ -359,9 +377,21 @@ if (-not $masterDbReady -or -not $ecommerceDbReady) {
 }
 Write-Success "Bases de datos listas"
 
-# Configurar ambas instancias
-Initialize-VendureApp -AppName "vendure-master" -DbPort "5432" -ApiPort "3000" -AdminPort "3001" -DbName "vendure_master" -DbPass "vendure_master_pass"
-Initialize-VendureApp -AppName "vendure-ecommerce" -DbPort "5433" -ApiPort "3002" -AdminPort "3003" -DbName "vendure_ecommerce" -DbPass "vendure_ecommerce_pass"
+# Configurar ambas instancias (usando variables de .env)
+$masterPort = if ($env:POSTGRES_MASTER_PORT) { $env:POSTGRES_MASTER_PORT } else { "5432" }
+$masterApiPort = if ($env:VENDURE_MASTER_PORT) { $env:VENDURE_MASTER_PORT } else { "3000" }
+$masterAdminPort = if ($env:VENDURE_MASTER_ADMIN_PORT) { $env:VENDURE_MASTER_ADMIN_PORT } else { "3001" }
+$masterDbName = if ($env:POSTGRES_MASTER_DB) { $env:POSTGRES_MASTER_DB } else { "vendure_master" }
+$masterDbPass = if ($env:POSTGRES_MASTER_PASSWORD) { $env:POSTGRES_MASTER_PASSWORD } else { "vendure_master_pass" }
+
+Initialize-VendureApp -AppName "vendure-master" -DbPort $masterPort -ApiPort $masterApiPort -AdminPort $masterAdminPort -DbName $masterDbName -DbPass $masterDbPass
+
+$ecomApiPort = if ($env:VENDURE_ECOMMERCE_PORT) { $env:VENDURE_ECOMMERCE_PORT } else { "3002" }
+$ecomAdminPort = if ($env:VENDURE_ECOMMERCE_ADMIN_PORT) { $env:VENDURE_ECOMMERCE_ADMIN_PORT } else { "3003" }
+$ecomDbName = if ($env:POSTGRES_ECOMMERCE_DB) { $env:POSTGRES_ECOMMERCE_DB } else { "vendure_ecommerce" }
+$ecomDbPass = if ($env:POSTGRES_ECOMMERCE_PASSWORD) { $env:POSTGRES_ECOMMERCE_PASSWORD } else { "vendure_ecommerce_pass" }
+
+Initialize-VendureApp -AppName "vendure-ecommerce" -DbPort "5433" -ApiPort $ecomApiPort -AdminPort $ecomAdminPort -DbName $ecomDbName -DbPass $ecomDbPass
 
 # Crear .pnpmfile.cjs en la raíz
 Write-Info "Creando .pnpmfile.cjs para forzar OSW $OSW_VERSION..."
