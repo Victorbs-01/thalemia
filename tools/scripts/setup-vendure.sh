@@ -16,6 +16,20 @@ echo -e "${BLUE}🚀 Entrepreneur OS - Vendure Setup${NC}"
 echo "================================================"
 echo ""
 
+# Verificar que existe .env en la raíz del proyecto
+if [ ! -f ".env" ]; then
+    print_error ".env file not found. Please create it from .env.example:"
+    echo "  cp .env.example .env"
+    echo "  # Then edit .env with your configuration"
+    exit 1
+fi
+
+# Cargar variables de entorno desde .env
+print_info "Loading configuration from .env..."
+set -a
+source .env
+set +a
+
 # Función para imprimir con color
 print_status() {
     echo -e "${GREEN}✓${NC} $1"
@@ -340,11 +354,21 @@ if [ -z "$MASTER_DB_READY" ] || [ -z "$ECOMMERCE_DB_READY" ]; then
 fi
 print_status "Bases de datos listas"
 
-# Configurar Vendure Master
-setup_vendure "vendure-master" "5432" "3000" "3001" "vendure_master" "vendure_master_pass"
+# Configurar Vendure Master (usando variables de .env)
+setup_vendure "vendure-master" \
+    "${POSTGRES_MASTER_PORT:-5432}" \
+    "${VENDURE_MASTER_PORT:-3000}" \
+    "${VENDURE_MASTER_ADMIN_PORT:-3001}" \
+    "${POSTGRES_MASTER_DB:-vendure_master}" \
+    "${POSTGRES_MASTER_PASSWORD:-vendure_master_pass}"
 
-# Configurar Vendure Ecommerce
-setup_vendure "vendure-ecommerce" "5433" "3002" "3003" "vendure_ecommerce" "vendure_ecommerce_pass"
+# Configurar Vendure Ecommerce (usando variables de .env)
+setup_vendure "vendure-ecommerce" \
+    "5433" \
+    "${VENDURE_ECOMMERCE_PORT:-3002}" \
+    "${VENDURE_ECOMMERCE_ADMIN_PORT:-3003}" \
+    "${POSTGRES_ECOMMERCE_DB:-vendure_ecommerce}" \
+    "${POSTGRES_ECOMMERCE_PASSWORD:-vendure_ecommerce_pass}"
 
 # Mensaje final
 echo ""

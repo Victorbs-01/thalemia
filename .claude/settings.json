@@ -37,5 +37,36 @@
     "deployment": "distributed-k3s-china-friendly",
     "primaryLanguages": ["typescript", "javascript"],
     "frameworks": ["vendure", "next.js", "react", "vite"]
+  },
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user/thalemia"],
+      "description": "Secure file system operations with read/write access to the workspace"
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"],
+      "description": "HTTP requests and web content fetching capabilities"
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-git", "--repository", "/home/user/thalemia"],
+      "description": "Git repository operations including commits, branches, and history"
+    },
+    "nx-mcp": {
+      "command": "npx",
+      "args": ["nx-mcp@latest"],
+      "description": "Nx monorepo project graph, task management, and workspace intelligence"
+    },
+    "task-master": {
+      "command": "npx",
+      "args": ["-y", "task-master-ai"],
+      "env": {
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+      },
+      "description": "AI-powered task management with PRD parsing and task decomposition"
+    }
   }
 }
