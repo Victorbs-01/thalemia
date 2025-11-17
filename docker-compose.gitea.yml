@@ -1,0 +1,109 @@
+version: '3.8'
+
+networks:
+  entrepreneur-network:
+    external: true
+
+volumes:
+  gitea_data:
+    driver: local
+  gitea_postgres_data:
+    driver: local
+
+services:
+  gitea-postgres:
+    image: postgres:15
+    container_name: entrepreneur-gitea-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gitea
+      POSTGRES_USER: gitea
+      POSTGRES_PASSWORD: gitea123
+    volumes:
+      - gitea_postgres_data:/var/lib/postgresql/data
+    networks:
+      - entrepreneur-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U gitea -d gitea']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  gitea:
+    image: gitea/gitea:latest
+    container_name: entrepreneur-gitea
+    restart: unless-stopped
+    depends_on:
+      gitea-postgres:
+        condition: service_healthy
+    ports:
+      - '3080:3000' # HTTP (host:container)
+      - '2222:22'   # SSH (host:container)
+    volumes:
+      - gitea_data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      # Database configuration
+      - DB_TYPE=postgres
+      - DB_HOST=gitea-postgres:5432
+      - DB_NAME=gitea
+      - DB_USER=gitea
+      - DB_PASSWD=gitea123
+
+      # Server configuration
+      - GITEA__server__ROOT_URL=http://gitea.local:3080/
+      - GITEA__server__HTTP_PORT=3000
+      - GITEA__server__DOMAIN=gitea.local
+      - GITEA__server__SSH_DOMAIN=gitea.local
+      - GITEA__server__SSH_PORT=2222
+      - GITEA__server__DISABLE_SSH=false
+      - GITEA__server__START_SSH_SERVER=true
+      - GITEA__server__LFS_START_SERVER=true
+
+      # Security configuration
+      - GITEA__security__INSTALL_LOCK=false
+      - GITEA__security__SECRET_KEY=
+      - GITEA__security__INTERNAL_TOKEN=
+
+      # Service configuration
+      - GITEA__service__DISABLE_REGISTRATION=false
+      - GITEA__service__REQUIRE_SIGNIN_VIEW=false
+      - GITEA__service__REGISTER_EMAIL_CONFIRM=false
+      - GITEA__service__ENABLE_NOTIFY_MAIL=false
+      - GITEA__service__DEFAULT_KEEP_EMAIL_PRIVATE=false
+      - GITEA__service__DEFAULT_ALLOW_CREATE_ORGANIZATION=true
+      - GITEA__service__DEFAULT_ENABLE_TIMETRACKING=true
+      - GITEA__service__NO_REPLY_ADDRESS=noreply.gitea.local
+
+      # Repository configuration
+      - GITEA__repository__ROOT=/data/git/repositories
+      - GITEA__repository__DEFAULT_BRANCH=main
+      - GITEA__repository__DEFAULT_PRIVATE=private
+
+      # Log configuration
+      - GITEA__log__MODE=console
+      - GITEA__log__LEVEL=Info
+
+      # UI configuration
+      - GITEA__ui__DEFAULT_THEME=auto
+
+      # Session configuration
+      - GITEA__session__PROVIDER=memory
+
+      # Cache configuration
+      - GITEA__cache__ENABLED=true
+      - GITEA__cache__ADAPTER=memory
+
+      # Indexer configuration
+      - GITEA__indexer__ISSUE_INDEXER_TYPE=db
+      - GITEA__indexer__REPO_INDEXER_ENABLED=true
+    networks:
+      - entrepreneur-network
+    healthcheck:
+      test: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1']
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
