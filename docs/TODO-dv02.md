@@ -3,7 +3,7 @@
 3. recrear el script para instalar todo en dv02, mirror a tuna, bajar e instalar, git, docker, cursor, vpn, jetbrains enviroment, weixin,
 4. recrear script para instalar tailscale y probar que no se rompa la configuracion de docker, si se intala primero tailscale docker no logra leer sus propios contenedores
 5. install weixin
-6. install vpn
+6. install vpn - probar vpn en pc con win
 7. down the repo
 8. install claude there.
 9. start a vendure-shop backend
