@@ -1,0 +1,51 @@
+{
+  "name": "front-shop-01",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/storefront-vite/front-shop-01/src",
+  "projectType": "application",
+  "tags": ["type:app", "scope:storefront"],
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/storefront-vite/front-shop-01",
+        "configFile": "apps/storefront-vite/front-shop-01/vite.config.ts"
+      },
+      "configurations": {
+        "production": {
+          "mode": "production"
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "options": {
+        "buildTarget": "front-shop-01:build",
+        "port": 3012,
+        "hmr": true
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "front-shop-01:build:production"
+        }
+      }
+    },
+    "preview": {
+      "executor": "@nx/vite:preview-server",
+      "options": {
+        "buildTarget": "front-shop-01:build",
+        "port": 3012
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "front-shop-01:build:production"
+        }
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {}
+    }
+  }
+}
