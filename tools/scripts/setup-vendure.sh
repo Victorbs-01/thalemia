@@ -1,4 +1,17 @@
 #!/bin/bash
+#
+# Vendure Unified Setup Script (Simultaneous Installation)
+#
+# This script installs BOTH vendure-master AND vendure-ecommerce instances simultaneously.
+# Designed for standard development machines with adequate RAM (~8GB).
+#
+# Alternative: For low-RAM systems (<8GB), use sequential installation:
+#   1. ./tools/scripts/setup-vendure-master.sh
+#   2. ./tools/scripts/setup-vendure-ecommerce.sh
+#
+# Database credentials: Loaded from project root .env file, with fallback defaults.
+# Run from project root: ./tools/scripts/setup-vendure.sh
+#
 set -e
 
 # Colores para output

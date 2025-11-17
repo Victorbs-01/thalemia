@@ -1,6 +1,26 @@
-# setup-vendure.ps1
-# Script de configuración de Vendure para Entrepreneur OS
-# Ejecutar desde la raíz del proyecto
+<#
+.SYNOPSIS
+    Vendure Unified Setup Script - Simultaneous Installation (Windows PowerShell)
+
+.DESCRIPTION
+    This script installs BOTH vendure-master AND vendure-ecommerce instances simultaneously.
+    Designed for standard development machines with adequate RAM (~8GB).
+
+    Alternative: For low-RAM systems (<8GB), use sequential installation:
+      1. .\tools\scripts\setup-vendure-master.ps1
+      2. .\tools\scripts\setup-vendure-ecommerce.ps1
+
+    Database credentials: Loaded from project root .env file, with fallback defaults.
+
+.EXAMPLE
+    .\setup-vendure.ps1
+
+.NOTES
+    Author: Entrepreneur-OS
+    Version: 2.0.0
+    Requires: PowerShell 5.1+, Docker Desktop, pnpm
+    Run from: Project root directory
+#>
 
 [CmdletBinding()]
 param()

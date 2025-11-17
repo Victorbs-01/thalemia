@@ -1,13 +1,15 @@
 <#
 .SYNOPSIS
-    Setup script for Vendure Ecommerce instance (Windows PowerShell version)
+    Vendure Ecommerce Setup Script - Sequential Installation (Windows PowerShell)
 
 .DESCRIPTION
-    Creates and configures the vendure-ecommerce application with all necessary
-    configuration files, directory structure, and dependencies.
+    This script installs ONLY the vendure-ecommerce instance.
+    Designed for sequential installation on low-RAM systems (<8GB).
 
-    This is a Windows-native PowerShell port of setup-vendure-ecommerce.sh
-    with 100% feature parity.
+    Alternative: Use setup-vendure.ps1 to install BOTH instances simultaneously
+    (requires ~8GB RAM).
+
+    Database credentials: Loaded from project root .env file, with fallback defaults.
 
 .PARAMETER DryRun
     If specified, commands are printed but not executed (dry-run mode)
@@ -20,8 +22,9 @@
 
 .NOTES
     Author: Entrepreneur-OS
-    Version: 1.0.0
+    Version: 2.0.0
     Requires: PowerShell 5.1+, Docker Desktop, pnpm
+    Run from: Project root directory
 #>
 
 [CmdletBinding()]
@@ -37,6 +40,17 @@ $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 # Versiones de Vendure
 $VENDURE_VERSION = "^3.1.0"
 $OSW_VERSION = "1.3.5"
+
+# Load environment variables from project root .env if it exists
+if (Test-Path ".env") {
+    Get-Content .env | ForEach-Object {
+        if ($_ -match '^\s*([^#][^=]*)\s*=\s*(.*)$') {
+            $name = $matches[1].Trim()
+            $value = $matches[2].Trim()
+            [Environment]::SetEnvironmentVariable($name, $value, [EnvironmentVariableTarget]::Process)
+        }
+    }
+}
 
 #region Helper Functions
 
@@ -509,14 +523,20 @@ try {
     exit 1
 }
 
-# Configurar Vendure Ecommerce
+# Configurar Vendure Ecommerce (usando variables de .env con fallbacks)
+$ecomDbPort = if ($env:POSTGRES_ECOMMERCE_PORT) { $env:POSTGRES_ECOMMERCE_PORT } else { "5433" }
+$ecomApiPort = if ($env:VENDURE_ECOMMERCE_PORT) { $env:VENDURE_ECOMMERCE_PORT } else { "3002" }
+$ecomAdminPort = if ($env:VENDURE_ECOMMERCE_ADMIN_PORT) { $env:VENDURE_ECOMMERCE_ADMIN_PORT } else { "3003" }
+$ecomDbName = if ($env:POSTGRES_ECOMMERCE_DB) { $env:POSTGRES_ECOMMERCE_DB } else { "vendure_ecommerce" }
+$ecomDbPass = if ($env:POSTGRES_ECOMMERCE_PASSWORD) { $env:POSTGRES_ECOMMERCE_PASSWORD } else { "vendure_ecommerce_pass" }
+
 Setup-Vendure `
     -AppName "vendure-ecommerce" `
-    -DbPort "5433" `
-    -ApiPort "3002" `
-    -AdminPort "3003" `
-    -DbName "vendure_ecommerce" `
-    -DbPass "vendure_ecommerce_pass" `
+    -DbPort $ecomDbPort `
+    -ApiPort $ecomApiPort `
+    -AdminPort $ecomAdminPort `
+    -DbName $ecomDbName `
+    -DbPass $ecomDbPass `
     -DryRunMode:$DryRun
 
 # Mensaje final
