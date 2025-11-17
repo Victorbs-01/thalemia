@@ -1,0 +1,28 @@
+{
+  "name": "storefront-core",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/storefront/core/src",
+  "projectType": "library",
+  "tags": ["type:library", "scope:storefront"],
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/storefront/core"
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {
+        "config": "libs/storefront/core/vitest.config.ts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/storefront/core/**/*.{ts,tsx}"]
+      }
+    }
+  }
+}

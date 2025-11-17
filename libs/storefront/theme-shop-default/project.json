@@ -1,0 +1,8 @@
+{
+  "name": "storefront-theme-shop-default",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/storefront/theme-shop-default/src",
+  "projectType": "library",
+  "tags": ["type:library", "scope:storefront", "scope:theme"],
+  "targets": {}
+}
