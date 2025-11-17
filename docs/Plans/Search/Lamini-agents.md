@@ -1,3 +1,6 @@
+https://huggingface.co/lamini/lamini_docs_finetuned/tree/main
+https://docs.lamini.ai/
+
 Lamini, la chica hace cursor en deelearning.ia, pero parece que esto fue adquirido por amd
 
 sobre la empresa lamini, puedes buscar la informacion que existe de ellos, e indicarme lo que hacian, que puedo guardar de ellos, para aplicarlo a mi erp, cuando tenga agentes haciendo cosas en el erp

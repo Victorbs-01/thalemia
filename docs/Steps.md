@@ -10,11 +10,11 @@
 - ✅ Excellent documentation (CLAUDE.md, architecture docs, security docs)
 - ✅ Good Nx monorepo structure
 - ✅ TypeScript/ESLint/Prettier configured
-- ❌ NO actual application code (0 TypeScript files in apps/libs)
-- ❌ NO CI/CD pipeline (can push broken code to main)
-- ❌ NO pre-commit hooks (no local safety net)
-- ❌ NO tests (test frameworks installed but no tests exist)
-- ❌ NO branch protection (direct pushes to main allowed)
+- ✅ NO actual application code (0 TypeScript files in apps/libs)
+- ✅ NO CI/CD pipeline (can push broken code to main)
+- ✅ NO pre-commit hooks (no local safety net)
+- ✅ NO tests (test frameworks installed but no tests exist)
+- ✅ NO branch protection (direct pushes to main allowed)
 
 7. instalo dependedant bot
 8. configuro archivos para vscode y inteligent idea.
@@ -23,5 +23,7 @@
 11.
 12. se le pidio comitear a claude, ya que quede atrapado entre las nuevas reglas y el commit viejo
 13. se pidio crear el readmemd
-14. ahora quiero que active las reglas para que se optimicen tokens, con los makefile y plop de NX
-15.
+14. ahora quiero que active las reglas para que se optimicen tokens, con los makefile y plop de NX, se creo
+15. revise que MCP nos falta, se agregara git fech y filesystem (L1 tareas)
+16. Cree el PRD de L0 (son L0 al L8)
+17. cambiaremos de pc, para ir a trabajr de inmedito en ngex y vendure-shop 1
