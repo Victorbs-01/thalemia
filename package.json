@@ -6,6 +6,14 @@
     "prepare": "husky",
     "nx": "nx",
     "list": "nx list",
+    "// === MAKEFILE TARGETS ===": "",
+    "make:setup": "nx run entrepreneur-os:make:setup",
+    "make:dev": "nx run entrepreneur-os:make:dev",
+    "make:docker-up": "nx run entrepreneur-os:make:docker-up",
+    "make:docker-down": "nx run entrepreneur-os:make:docker-down",
+    "make:test-all": "nx run entrepreneur-os:make:test-all",
+    "make:lint-all": "nx run entrepreneur-os:make:lint-all",
+    "make:ci": "nx run entrepreneur-os:make:ci",
     "// === DESARROLLO ===": "",
     "dev": "nx run-many -t serve --all --parallel=5",
     "dev:vendure": "nx run-many -t serve --projects=vendure-master,vendure-ecommerce --parallel=2",
@@ -50,8 +58,9 @@
     "reset": "nx reset",
     "clean": "nx reset && pnpm run docker:clean",
     "// === SETUP ===": "",
-    "setup": "pnpm run setup:vendure && pnpm run setup:env",
-    "setup:vendure": "bash tools/scripts/setup-vendure.sh",
+    "setup": "pnpm run setup:vendure:master && pnpm run setup:vendure:ecommerce && pnpm run setup:env",
+    "setup:vendure:master": "bash tools/scripts/setup-vendure-master.sh",
+    "setup:vendure:ecommerce": "bash tools/scripts/setup-vendure-ecommerce.sh",
     "setup:env": "bash tools/scripts/setup-env.sh",
     "// === GENERADORES ===": "",
     "generate": "nx generate",
@@ -84,8 +93,11 @@
     "typescript": "^5.9.3"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
+    "{apps,libs,e2e}/**/*.{ts,tsx}": [
       "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "tools/**/*.{ts,tsx}": [
       "prettier --write"
     ],
     "*.{json,md,yml,yaml}": [

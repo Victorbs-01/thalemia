@@ -1,0 +1,35 @@
+# <%= importPath %>
+
+<%= className %> library for Entrepreneur-OS.
+
+## Description
+
+This library provides [describe the purpose of this library].
+
+## Usage
+
+```typescript
+import { } from '<%= importPath %>';
+```
+
+## Development
+
+This library is part of the Entrepreneur-OS monorepo.
+
+### Build
+
+```bash
+nx build <%= projectName %>
+```
+
+### Test
+
+```bash
+nx test <%= projectName %>
+```
+
+### Lint
+
+```bash
+nx lint <%= projectName %>
+```

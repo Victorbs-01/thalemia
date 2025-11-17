@@ -1,0 +1,38 @@
+import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+
+/**
+ * Configuration options for <%= className %>Plugin
+ */
+export interface <%= className %>PluginOptions {
+  // Add your plugin options here
+  enabled?: boolean;
+}
+
+/**
+ * <%= className %>Plugin
+ *
+ * Target: <%= target %>
+ *
+ * [Describe what this plugin does]
+ */
+@VendurePlugin({
+  imports: [PluginCommonModule],
+  configuration: (config) => {
+    // Modify Vendure configuration if needed
+    return config;
+  },
+  compatibility: '^2.0.0',
+})
+export class <%= className %>Plugin {
+  static options: <%= className %>PluginOptions = {
+    enabled: true,
+  };
+
+  /**
+   * Initialize the plugin with options
+   */
+  static init(options: <%= className %>PluginOptions): typeof <%= className %>Plugin {
+    this.options = { ...this.options, ...options };
+    return <%= className %>Plugin;
+  }
+}

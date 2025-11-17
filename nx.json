@@ -65,6 +65,10 @@
     }
   ],
   "generators": {
+    "@entrepreneur-os/generators": {
+      "shared-library": {},
+      "vendure-plugin": {}
+    },
     "@nx/react": {
       "library": {
         "unitTestRunner": "vitest"

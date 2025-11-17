@@ -1,0 +1,58 @@
+# <%= className %>Plugin
+
+Vendure plugin for <%= className %> functionality.
+
+## Target
+
+This plugin is designed for: **<%= target %>** instance(s).
+
+## Description
+
+[Describe what this plugin does]
+
+## Installation
+
+This plugin is part of the `@entrepreneur-os/vendure/plugins` library.
+
+```typescript
+import { <%= className %>Plugin } from '@entrepreneur-os/vendure/plugins';
+
+// In your vendure-config.ts
+export const config: VendureConfig = {
+  plugins: [
+    <%= className %>Plugin.init({
+      // plugin options
+    }),
+  ],
+};
+```
+
+## Configuration
+
+### Options
+
+```typescript
+interface <%= className %>PluginOptions {
+  // Define your plugin options here
+}
+```
+
+## Usage
+
+[Provide usage examples]
+
+## Development
+
+This plugin is located in `libs/vendure/plugins/src/<%= fileName %>/`.
+
+### Testing
+
+```bash
+nx test vendure-plugins
+```
+
+### Build
+
+```bash
+nx build vendure-plugins
+```

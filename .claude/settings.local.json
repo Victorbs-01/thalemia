@@ -1,16 +1,6 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(gh api:*)",
-      "Bash(cat:*)",
-      "Bash(test:*)",
-      "Bash(pnpm list:*)",
-      "Bash(git push:*)",
-      "Bash(gh run list:*)",
-      "Bash(pnpm run format:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)"
-    ],
+    "allow": ["Bash(test:*)"],
     "deny": [],
     "ask": []
   }
