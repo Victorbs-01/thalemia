@@ -5,7 +5,24 @@ Formatear dev02 con Ubuntu — ✔
 Usuario con sudo — ✔
 Mirrors Tsinghua — ✔
 apt update && apt upgrade — ✔
+Entrar a bitwarden loguear — ✔
 GitHub login + SSH — ✔ Crea con ssh-keygen -t ed25519 -C "tu-email-de-github"
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+cat ~/.ssh/id_ed25519.pub
+🟢 PASO 5 — Agregar la clave a tu GitHub
+Vas a:👉 https://github.com/settings/keys
+Arriba → New SSH Key
+Title: dev02
+Key type: Authentication
+Pegar clave en el recuadro
+Guardar.
+en terminal prueba que funciona > ssh -T git@github.com
+
+clona repo > git clone git@github.com:Victorbs-01/thalemia.git entrepreneur-os
+
+vpn para el pc - logear aqui - https://w05.qytwebb05.cc/dashboard
+instala https://www.clashverge.dev/install.html
 
 🟦 FASE B — Docker (script 1, obligatorio y antes de todo lo demás)
 
