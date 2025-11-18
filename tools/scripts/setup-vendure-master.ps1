@@ -1,13 +1,15 @@
 <#
 .SYNOPSIS
-    Setup script for Vendure Master instance (Windows PowerShell version)
+    Vendure Master Setup Script - Sequential Installation (Windows PowerShell)
 
 .DESCRIPTION
-    Creates and configures the vendure-master application with all necessary
-    configuration files, directory structure, and dependencies.
+    This script installs ONLY the vendure-master instance.
+    Designed for sequential installation on low-RAM systems (<8GB).
 
-    This is a Windows-native PowerShell port of setup-vendure-master.sh
-    with 100% feature parity.
+    Alternative: Use setup-vendure.ps1 to install BOTH instances simultaneously
+    (requires ~8GB RAM).
+
+    Database credentials: Loaded from project root .env file, with fallback defaults.
 
 .PARAMETER DryRun
     If specified, commands are printed but not executed (dry-run mode)
@@ -20,8 +22,9 @@
 
 .NOTES
     Author: Entrepreneur-OS
-    Version: 1.0.0
+    Version: 2.0.0
     Requires: PowerShell 5.1+, Docker Desktop, pnpm
+    Run from: Project root directory
 #>
 
 [CmdletBinding()]
@@ -37,6 +40,17 @@ $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 # Versiones de Vendure
 $VENDURE_VERSION = "^3.1.0"
 $OSW_VERSION = "1.3.5"
+
+# Load environment variables from project root .env if it exists
+if (Test-Path ".env") {
+    Get-Content .env | ForEach-Object {
+        if ($_ -match '^\s*([^#][^=]*)\s*=\s*(.*)$') {
+            $name = $matches[1].Trim()
+            $value = $matches[2].Trim()
+            [Environment]::SetEnvironmentVariable($name, $value, [EnvironmentVariableTarget]::Process)
+        }
+    }
+}
 
 #region Helper Functions
 
@@ -509,14 +523,20 @@ try {
     exit 1
 }
 
-# Configurar Vendure Master
+# Configurar Vendure Master (usando variables de .env con fallbacks)
+$masterDbPort = if ($env:POSTGRES_MASTER_PORT) { $env:POSTGRES_MASTER_PORT } else { "5432" }
+$masterApiPort = if ($env:VENDURE_MASTER_PORT) { $env:VENDURE_MASTER_PORT } else { "3000" }
+$masterAdminPort = if ($env:VENDURE_MASTER_ADMIN_PORT) { $env:VENDURE_MASTER_ADMIN_PORT } else { "3001" }
+$masterDbName = if ($env:POSTGRES_MASTER_DB) { $env:POSTGRES_MASTER_DB } else { "vendure_master" }
+$masterDbPass = if ($env:POSTGRES_MASTER_PASSWORD) { $env:POSTGRES_MASTER_PASSWORD } else { "vendure_master_pass" }
+
 Setup-Vendure `
     -AppName "vendure-master" `
-    -DbPort "5432" `
-    -ApiPort "3000" `
-    -AdminPort "3001" `
-    -DbName "vendure_master" `
-    -DbPass "vendure_master_pass" `
+    -DbPort $masterDbPort `
+    -ApiPort $masterApiPort `
+    -AdminPort $masterAdminPort `
+    -DbName $masterDbName `
+    -DbPass $masterDbPass `
     -DryRunMode:$DryRun
 
 # Mensaje final

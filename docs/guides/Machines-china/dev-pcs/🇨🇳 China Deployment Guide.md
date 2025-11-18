@@ -5,6 +5,7 @@ Guía completa para deployar Entrepreneur OS en China detrás del Great Firewall
 ## 🚧 Desafíos en China
 
 ### Bloqueados/Lentos
+
 - ❌ GitHub (intermitente)
 - ❌ Docker Hub
 - ❌ NPM registry
@@ -14,6 +15,7 @@ Guía completa para deployar Entrepreneur OS en China detrás del Great Firewall
 - ⚠️ CloudFlare (lento)
 
 ### Accesibles
+
 - ✅ Tailscale (funciona bien)
 - ✅ DigitalOcean (desde VPN)
 - ✅ Aliyun/Tencent Cloud
@@ -24,6 +26,7 @@ Guía completa para deployar Entrepreneur OS en China detrás del Great Firewall
 ## 📋 Pre-requisitos
 
 ### Hardware
+
 ```
 Mínimo para producción:
 - DV02: Intel i9 + 32GB RAM + RTX 3070 (Vendure Master)
@@ -34,6 +37,7 @@ Mínimo para producción:
 ```
 
 ### Software Base
+
 ```
 - Debian 13 (bookworm) en todos los nodos Linux
 - XFCE desktop (ligero)
@@ -42,6 +46,7 @@ Mínimo para producción:
 ```
 
 ### Conexión
+
 ```
 - Internet estable (aunque limitado por GFW)
 - Acceso a Tailscale
@@ -341,7 +346,7 @@ sudo tee /etc/nginx/sites-available/entrepreneur-os << 'EOF'
 server {
     listen 80;
     server_name api-master.tudominio.com;
-    
+
     location / {
         proxy_pass http://100.x.x.x:3000;  # IP Tailscale de DV02
         proxy_set_header Host $host;
@@ -353,7 +358,7 @@ server {
 server {
     listen 80;
     server_name api.tudominio.com;
-    
+
     location / {
         proxy_pass http://100.y.y.y:3002;  # IP Tailscale de DV04
         proxy_set_header Host $host;
@@ -505,6 +510,7 @@ Una vez todo esté funcionando:
 ## 🆘 Soporte
 
 Si algo falla:
+
 1. Revisa logs: `docker-compose logs -f`
 2. Verifica conectividad: `ping`, `curl`, `telnet`
 3. Revisa iptables: `iptables -L -n`
