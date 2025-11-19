@@ -178,12 +178,37 @@ apt-get install -y \
   docker-buildx-plugin \
   docker-compose-plugin
 
-# 12. Habilitar y arrancar servicio docker
+# 12. Habilitar servicio docker y configurar mirrors de registro para China
 #     - enable: se inicia automáticamente al arrancar el sistema.
-#     - start: lo arranca inmediatamente.
+#     - Además, configuramos mirrors chinos para que los pulls (incluyendo
+#       `hello-world`) no vayan a docker.io directamente, que suele estar
+#       bloqueado en China.
 
 systemctl enable docker
-systemctl start docker
+
+# 12.1 Asegurar directorio de configuración de Docker
+mkdir -p /etc/docker
+
+# 12.2 Respaldar configuración previa de daemon.json (si existe)
+if [ -f /etc/docker/daemon.json ] && [ ! -f /etc/docker/daemon.json.backup-dev02-docker ]; then
+  cp /etc/docker/daemon.json /etc/docker/daemon.json.backup-dev02-docker
+fi
+
+# 12.3 Configurar mirrors de registro apuntando a mirrors chinos (USTC y TUNA)
+#       Esto hace que las imágenes se obtengan desde mirrors accesibles en China
+#       en lugar del registro por defecto bloqueado.
+cat <<'EOF' >/etc/docker/daemon.json
+{
+  "registry-mirrors": [
+    "https://docker.mirrors.ustc.edu.cn",
+    "https://docker.mirrors.tuna.tsinghua.edu.cn"
+  ]
+}
+EOF
+
+# 12.4 Recargar configuración de systemd y reiniciar Docker para aplicar mirrors
+systemctl daemon-reload
+systemctl restart docker
 
 # 13. Agregar usuario actual al grupo docker
 #     - Si se ejecuta con sudo, SUDO_USER es el usuario "real".
