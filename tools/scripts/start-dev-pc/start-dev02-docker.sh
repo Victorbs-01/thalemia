@@ -58,7 +58,33 @@ if [ "${UBUNTU_VERSION_MAJOR}" -lt 24 ]; then
   echo "Advertencia: Ubuntu ${VERSION_ID} detectado. Se recomienda Ubuntu 24.x o superior para dev02." >&2
 fi
 
-# 4. Configurar mirrors de APT para entornos con restricciones (por ejemplo, China)
+# 4. Fase de limpieza previa de Docker y repos relacionados
+#    - Objetivo: evitar conflictos con instalaciones previas o repositorios
+#      antiguos (incluyendo posibles repos no firmados).
+#    - Pasos:
+#      * Eliminar listas de repositorios Docker antiguas.
+#      * Eliminar claves GPG previas asociadas a Docker.
+#      * Desinstalar paquetes Docker existentes de forma tolerante.
+
+# 4.1 Eliminar listas de repositorios Docker previas
+rm -f /etc/apt/sources.list.d/docker.list || true
+rm -f /etc/apt/sources.list.d/docker-ce.list || true
+rm -f /etc/apt/sources.list.d/docker*.list.save || true
+
+# 4.2 Eliminar claves GPG antiguas de Docker
+rm -f /etc/apt/keyrings/docker.gpg || true
+# Limpiar posibles claves heredadas en el keyring global (best-effort, no crítico).
+set +e
+if command -v apt-key >/dev/null 2>&1; then
+  apt-key list 2>/dev/null | grep -i "docker" -B1 -A1 >/tmp/docker-keys.txt || true
+fi
+set -e
+
+# 4.3 Desinstalar paquetes Docker si ya existen (sin fallar si no están instalados)
+apt-get remove -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras || true
+apt-get autoremove -y || true
+
+# 5. Configurar mirrors de APT para entornos con restricciones (por ejemplo, China)
 #    - En algunos países (China) el acceso directo a los repositorios oficiales
 #      puede ser lento o estar bloqueado.
 #    - Antes de cualquier `apt-get update` cambiamos los mirrors de Ubuntu a
@@ -86,7 +112,7 @@ deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ ${UBUNTU_CODENAME}-security mai
 deb https://mirrors.ustc.edu.cn/ubuntu/ ${UBUNTU_CODENAME}-security main restricted universe multiverse
 EOF
 
-# 5. Instalar paquetes base: git curl gnupg ca-certificates lsb-release htop
+# 6. Instalar paquetes base: git curl gnupg ca-certificates lsb-release htop
 #    - git: control de versiones
 #    - curl: descargas HTTP/HTTPS desde terminal
 #    - gnupg: gestión de claves GPG (necesario para repositorios seguros)
@@ -103,28 +129,24 @@ apt-get install -y \
   lsb-release \
   htop
 
-# 6. Crear /etc/apt/keyrings
+# 7. Crear /etc/apt/keyrings
 #    - Se usa este directorio para almacenar claves GPG de repositorios externos.
 #    - Se configura con permisos 0755 (lectura para todos, escritura solo root).
 
 mkdir -p /etc/apt/keyrings
 chmod 0755 /etc/apt/keyrings
 
-# 7. Descargar y configurar la GPG key de Docker usando mirrors (TUNA/USTC)
-#    - En vez de usar download.docker.com, utilizamos los mirrors chinos.
-#    - Intentamos primero TUNA; si falla, probamos USTC.
+# 8. Descargar y configurar la GPG key de Docker usando solo mirror USTC
+#    - Para evitar bloqueos y asegurar repositorios firmados, usamos únicamente
+#      la clave publicada en el mirror chino de USTC.
 
 if [ ! -f /etc/apt/keyrings/docker.gpg ]; then
-  if ! curl -fsSL https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/ubuntu/gpg \
-    | gpg --dearmor -o /etc/apt/keyrings/docker.gpg; then
-    # Fallback a USTC si TUNA falla
-    curl -fsSL https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu/gpg \
-      | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  fi
+  curl -fsSL https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu/gpg \
+    | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
   chmod a+r /etc/apt/keyrings/docker.gpg
 fi
 
-# 8. Agregar repositorio de Docker usando mirrors TUNA y USTC para la arquitectura actual
+# 9. Agregar repositorio de Docker usando mirrors TUNA y USTC para la arquitectura actual
 #    - Detectamos la arquitectura con dpkg --print-architecture (amd64, arm64, etc.).
 #    - Usamos el mismo UBUNTU_CODENAME calculado arriba.
 #    - Añadimos ambas URLs para mayor resiliencia en China.
@@ -136,13 +158,13 @@ deb [arch=${ARCH} signed-by=/etc/apt/keyrings/docker.gpg] https://mirrors.tuna.t
 deb [arch=${ARCH} signed-by=/etc/apt/keyrings/docker.gpg] https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu ${UBUNTU_CODENAME} stable
 EOF
 
-# 9. apt update
+# 10. apt update
 #    - Actualizamos la lista de paquetes para incluir los repositorios de Docker
 #      desde mirrors TUNA/USTC.
 
 apt-get update
 
-# 10. Instalar docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin
+# 11. Instalar docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin
 #    - docker-ce: Docker Engine
 #    - docker-ce-cli: cliente de línea de comandos
 #    - containerd.io: runtime de contenedores
@@ -156,14 +178,14 @@ apt-get install -y \
   docker-buildx-plugin \
   docker-compose-plugin
 
-# 11. Habilitar y arrancar servicio docker
+# 12. Habilitar y arrancar servicio docker
 #     - enable: se inicia automáticamente al arrancar el sistema.
 #     - start: lo arranca inmediatamente.
 
 systemctl enable docker
 systemctl start docker
 
-# 12. Agregar usuario actual al grupo docker
+# 13. Agregar usuario actual al grupo docker
 #     - Si se ejecuta con sudo, SUDO_USER es el usuario "real".
 #     - Si no, usamos whoami.
 #     - Agregar al grupo docker permite ejecutar `docker` sin sudo (después de reloguear).
@@ -174,14 +196,14 @@ if ! id -nG "${TARGET_USER}" | tr ' ' '\n' | grep -q '^docker$'; then
   usermod -aG docker "${TARGET_USER}"
 fi
 
-# 13. Mostrar mensaje: "Reinicia sesión"
+# 14. Mostrar mensaje: "Reinicia sesión"
 #     - Es necesario cerrar sesión y volver a entrar para que el grupo docker
 #       se aplique al usuario TARGET_USER.
 
 echo "Reinicia sesión"
 
-# 14. Ejecutar prueba docker run hello-world
-#     15. Si falla, mostrar mensaje: "No instalar VPN ni Tailscale"
+# 15. Ejecutar prueba docker run hello-world
+#     16. Si falla, mostrar mensaje: "No instalar VPN ni Tailscale"
 #
 #     IMPORTANTE:
 #     - Usamos un bloque especial para capturar el código de salida de docker
@@ -200,6 +222,6 @@ if [ "${DOCKER_EXIT_CODE}" -ne 0 ]; then
   exit "${DOCKER_EXIT_CODE}"
 fi
 
-# 16. Mensaje final si todo va bien (Docker funcionando correctamente)
+# 17. Mensaje final si todo va bien (Docker funcionando correctamente)
 
 echo "Docker se instaló y se probó correctamente con 'hello-world' en dev02."
