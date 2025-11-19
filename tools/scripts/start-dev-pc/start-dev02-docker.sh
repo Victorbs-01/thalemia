@@ -194,14 +194,19 @@ if [ -f /etc/docker/daemon.json ] && [ ! -f /etc/docker/daemon.json.backup-dev02
   cp /etc/docker/daemon.json /etc/docker/daemon.json.backup-dev02-docker
 fi
 
-# 12.3 Configurar mirrors de registro apuntando a mirrors chinos (USTC y TUNA)
+# 12.3 Configurar mirrors de registro apuntando a mirrors chinos múltiples
 #       Esto hace que las imágenes se obtengan desde mirrors accesibles en China
 #       en lugar del registro por defecto bloqueado.
+#       Incluimos varios mirrors conocidos (hub-mirror, DaoCloud, TUNA, USTC)
+#       para aumentar la probabilidad de éxito incluso si alguno falla.
 cat <<'EOF' >/etc/docker/daemon.json
 {
   "registry-mirrors": [
-    "https://docker.mirrors.ustc.edu.cn",
-    "https://docker.mirrors.tuna.tsinghua.edu.cn"
+    "https://hub-mirror.c.163.com",
+    "https://docker.m.daocloud.io",
+    "https://f1361db2.m.daocloud.io",
+    "https://docker.mirrors.tuna.tsinghua.edu.cn",
+    "https://docker.mirrors.ustc.edu.cn"
   ]
 }
 EOF
